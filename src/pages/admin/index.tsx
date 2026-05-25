@@ -9,7 +9,6 @@ import { Users, Cpu, ShieldCheck, Activity } from 'lucide-react';
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
 
-  // Ringkasan Data Statistik Panel Admin
   const stats = [
     { name: 'Total Pengguna', value: '1,248', icon: Users, color: 'text-blue-400' },
     { name: 'AI Gen / Hari Ini', value: '3,412', icon: Cpu, color: 'text-purple-400' },
@@ -22,16 +21,12 @@ export default function AdminDashboard() {
         <title>Control Panel Admin - AJM Suite</title>
       </Head>
 
-      {/* 1. Sidebar Navigasi Kiri */}
       <Sidebar currentTab={activeTab} setCurrentTab={setActiveTab} />
 
-      {/* Konten Utama Kanan */}
       <div className="flex-1 flex flex-col min-w-0">
-        {/* 2. Header Atas */}
         <Header />
 
         <main className="flex-1 p-6 md:p-8 overflow-y-auto">
-          {/* Judul Halaman Dinamis */}
           <header className="mb-8 border-b border-slate-900 pb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
             <div>
               <h2 className="text-xl font-bold tracking-tight text-white capitalize">{activeTab} Management</h2>
@@ -42,10 +37,8 @@ export default function AdminDashboard() {
             </div>
           </header>
 
-          {/* ================= TAB 1: DASHBOARD UTAMA ================= */}
           {activeTab === 'dashboard' && (
             <div className="flex flex-col gap-8">
-              {/* Grid Kartu Statistik */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                 {stats.map((stat, idx) => {
                   const Icon = stat.icon;
@@ -63,10 +56,8 @@ export default function AdminDashboard() {
                 })}
               </div>
 
-              {/* Grafik Analitik Trafik */}
               <AnalyticsChart />
 
-              {/* Monitor Log Aktivitas Node GPU */}
               <div className="glass-panel rounded-2xl border border-slate-900 p-6">
                 <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-4">Live Edge Node Logs</h3>
                 <div className="bg-slate-950 border border-slate-900 rounded-xl p-4 font-mono text-[11px] text-slate-400 h-48 overflow-y-auto flex flex-col gap-1.5">
@@ -79,7 +70,6 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ================= TAB 2: MANAGEMENT KELOLA USER ================= */}
           {activeTab === 'users' && (
             <div className="flex flex-col gap-4">
               <h3 className="text-xs font-bold text-slate-400 uppercase tracking-wider">Database User Registry</h3>
@@ -87,7 +77,6 @@ export default function AdminDashboard() {
             </div>
           )}
 
-          {/* ================= TAB 3: PENGATURAN API ================= */}
           {activeTab === 'settings' && (
             <div className="glass-card border border-slate-900 p-6 rounded-2xl max-w-xl flex flex-col gap-4">
               <h3 className="text-sm font-bold text-slate-300 mb-2">Konfigurasi Kunci API Cadangan</h3>
@@ -100,11 +89,10 @@ export default function AdminDashboard() {
                   className="w-full bg-slate-950 border border-slate-850 rounded-xl px-4 py-3 text-xs text-slate-500 cursor-not-allowed outline-none" 
                 />
               </div>
-              <p className="text-[10px] text-slate-600 italic">Catatan Keamanan: Untuk proteksi terbaik dari bot peretas GitHub, ubah token langsung melalui dashboard pengaturan Environment Variables di panel Vercel Anda.</p>
             </div>
           )}
         </main>
       </div>
     </div>
   );
-          }
+                            }
