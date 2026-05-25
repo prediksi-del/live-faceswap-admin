@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import Head from 'next/head';
-import { Sidebar } from '@/components/admin/Sidebar';
-import { Header } from '@/components/admin/Header';
+
+// Impor gabungan modular via barrel export index.ts
+import { Sidebar, Header } from '@/components/admin';
+
 import { AnalyticsChart } from '@/components/dashboard/AnalyticsChart';
 import { UserManagement } from '@/components/dashboard/UserManagement';
 import { Users, Cpu, ShieldCheck, Activity } from 'lucide-react';
@@ -95,4 +97,4 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-                            }
+                                                                             }
