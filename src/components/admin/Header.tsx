@@ -10,7 +10,7 @@ export const Header: React.FC = () => {
           <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
         </span>
         <span className="text-[11px] font-mono text-slate-400 uppercase tracking-widest flex items-center gap-1.5">
-          <Radio className="w-3 h-3 text-emerald-400" /> All Node GPU Systems Operational
+          <Radio className="w-3 h-3 text-emerald-400" /> All Systems Operational
         </span>
       </div>
 
