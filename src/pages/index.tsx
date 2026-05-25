@@ -1,130 +1,152 @@
 import { useState, useRef } from 'react';
 import Head from 'next/head';
+import { CameraPreview } from '@/components/faceswap/CameraPreview';
+import { UploadZone } from '@/components/faceswap/UploadZone';
+import { ControlPanel } from '@/components/faceswap/ControlPanel';
+import { Eye, ShieldAlert } from 'lucide-react';
 
 export default function Home() {
-  const [cameraActive, setCameraActive] = useState(false);
+  const [isCameraActive, setIsCameraActive] = useState(false);
   const [mode, setMode] = useState<'face_swap' | 'body_changer'>('face_swap');
-  const [uploadImg, setUploadImg] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [resultImage, setResultImage] = useState<string | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const [targetAsset, setTargetAsset] = useState<string | null>(null);
+  const [intensity, setIntensity] = useState<number>(85);
+  const [isLoading, setIsLoading] = useState(false);
+  const [outputResult, setOutputResult] = useState<string | null>(null);
+  
+  const videoRef = useRef<HTMLVideoElement | null>(null);
 
-  // Mengaktifkan Kamera Browser (Tanpa Download)
-  const startCamera = async () => {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ video: true });
-      if (videoRef.current) {
-        videoRef.current.srcObject = stream;
-        setCameraActive(true);
-      }
-    } catch (err) {
-      alert("Gagal mengakses kamera. Pastikan izin diberikan.");
+  // Fungsi utilitas menangkap screenshot frame kamera statis untuk dikirim ke API
+  const captureFrame = (): string | null => {
+    if (!videoRef.current || !isCameraActive) return null;
+    const canvas = document.createElement('canvas');
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (ctx) {
+      // Balik horizontal (mirroring) agar sesuai tampilan kamera normal
+      ctx.translate(canvas.width, 0);
+      ctx.scale(-1, 1);
+      ctx.drawImage(videoRef.current, 0, 0, canvas.width, canvas.height);
+      return canvas.toDataURL('image/jpeg');
     }
+    return null;
   };
 
-  // Simulasi Handle Upload Gambar Target (Wajah/Baju)
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setUploadImg(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+  const handleProcessTransformation = async () => {
+    if (!targetAsset) {
+      alert("Silakan unggah aset target (foto wajah atau pakaian) terlebih dahulu!");
+      return;
     }
-  };
 
-  const triggerSwap = async () => {
-    if (!uploadImg) return alert("Silakan upload foto target terlebih dahulu!");
-    setLoading(true);
+    let baseFrame = captureFrame();
+    // Fallback jika kamera mati, gunakan placeholder internal untuk demo admin
+    if (!baseFrame) {
+      alert("Kamera tidak aktif. Menggunakan mode simulasi gambar statis.");
+      baseFrame = targetAsset; 
+    }
 
-    // Pada implementasi produksi, Anda mengambil snapshot dari videoRef 
-    // lalu mengirimkannya bersama uploadImg ke /api/swap/process-image
+    setIsLoading(true);
     try {
       const response = await fetch('/api/swap/process-image', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          sourceImage: uploadImg, 
-          targetImage: uploadImg, // Placeholder snapshot kamera
-          mode: mode
+          sourceImage: targetAsset, // Gambar unggahan user
+          targetImage: baseFrame,   // Snapshot kamera langsung
+          mode: mode,
+          intensity: intensity
         })
       });
+
       const data = await response.json();
-      if (data.success) setResultImage(data.resultUrl);
-    } catch (error) {
-      console.error(error);
+      if (data.success) {
+        setOutputResult(data.resultUrl);
+      } else {
+        alert("Gagal memproses AI: " + data.error);
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Terjadi kegagalan komunikasi dengan Vercel Serverless.");
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-white flex flex-col items-center p-6">
+    <div className="min-h-screen bg-[#020617] flex flex-col items-center px-4 md:px-8 pb-12">
       <Head>
-        <title>Live Face & Body Swap Admin</title>
+        <title>Live Swap Suite - Web Admin Server</title>
       </Head>
 
-      <header className="w-full max-w-6xl flex justify-between items-center mb-10 py-4 border-b border-slate-800">
-        <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">
-          AI-SWAPPER LIVE
-        </h1>
-        <div className="flex gap-4">
+      {/* Header Panel */}
+      <header className="w-full max-w-7xl flex flex-col sm:flex-row justify-between items-center py-6 border-b border-slate-900 gap-4 mb-8">
+        <div>
+          <h1 className="text-xl font-black bg-gradient-to-r from-blue-400 via-indigo-400 to-purple-500 bg-clip-text text-transparent tracking-tight">
+            LIVE SWAP SUITE PRO
+          </h1>
+          <p className="text-xs text-slate-500 font-medium">Real-Time Instant Face & Body Customization Suite</p>
+        </div>
+
+        {/* Mode Selector Router */}
+        <div className="flex bg-slate-900/80 p-1.5 rounded-xl border border-slate-800/80">
           <button 
-            onClick={() => setMode('face_swap')} 
-            className={`px-4 py-2 rounded-lg transition ${mode === 'face_swap' ? 'bg-blue-600' : 'bg-slate-800'}`}>
-            Face Swap
+            onClick={() => { setMode('face_swap'); setOutputResult(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'face_swap' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            Face Swap Engine
           </button>
           <button 
-            onClick={() => setMode('body_changer')} 
-            className={`px-4 py-2 rounded-lg transition ${mode === 'body_changer' ? 'bg-blue-600' : 'bg-slate-800'}`}>
-            Body Changer
+            onClick={() => { setMode('body_changer'); setOutputResult(null); }}
+            className={`px-4 py-2 rounded-lg text-xs font-bold transition-all ${mode === 'body_changer' ? 'bg-blue-600 text-white shadow-lg' : 'text-slate-400 hover:text-slate-200'}`}
+          >
+            Body & Outfits Changer
           </button>
         </div>
       </header>
 
-      <main className="w-full max-w-6xl grid grid-cols-1 md:grid-cols-2 gap-8">
-        {/* Panel Kiri: Live Camera & Kontrol */}
-        <div className="backdrop-blur-md bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col items-center">
-          <h2 className="text-xl font-semibold mb-4 text-slate-300">Live Camera Feed</h2>
-          <div className="w-full aspect-video bg-slate-900 rounded-xl overflow-hidden flex items-center justify-center border border-slate-800 relative">
-            {cameraActive ? (
-              <video ref={videoRef} autoPlay playsInline className="w-full h-full object-cover" />
-            ) : (
-              <button onClick={startCamera} className="bg-blue-600 hover:bg-blue-700 px-6 py-3 rounded-xl font-medium transition">
-                Aktifkan Kamera Browser
-              </button>
-            )}
+      {/* Workspace Grid */}
+      <main className="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        {/* Kontrol Input (Kolom Kiri) */}
+        <div className="lg:col-span-7 flex flex-col gap-6">
+          <CameraPreview isActive={isCameraActive} onToggle={setIsCameraActive} videoRef={videoRef} />
+          
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <UploadZone 
+              label={mode === 'face_swap' ? "1. Foto Wajah Target Baru" : "1. Foto Pakaian Baru"} 
+              onImageSelected={setTargetAsset} 
+            />
+            <ControlPanel intensity={intensity} setIntensity={setIntensity} isLoading={isLoading} onExecute={handleProcessTransformation} />
           </div>
-
-          {/* Upload Target Zone */}
-          <div className="w-full mt-6">
-            <label className="block text-sm text-slate-400 mb-2">
-              {mode === 'face_swap' ? 'Upload Foto Wajah Target:' : 'Upload Foto Pakaian Baru:'}
-            </label>
-            <input type="file" accept="image/*" onChange={handleImageUpload} className="w-full text-sm text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-600 file:text-white hover:file:bg-blue-700 cursor-pointer"/>
-          </div>
-
-          <button 
-            onClick={triggerSwap}
-            disabled={loading}
-            className="w-full mt-6 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 py-4 rounded-xl font-bold transition disabled:opacity-50">
-            {loading ? 'Sedang Memproses AI...' : 'Terapkan Perubahan Instan'}
-          </button>
         </div>
 
-        {/* Panel Kanan: Hasil Instan */}
-        <div className="backdrop-blur-md bg-white/5 border border-white/10 p-6 rounded-2xl flex flex-col items-center justify-between">
-          <h2 className="text-xl font-semibold mb-4 text-slate-300">Hasil Real-Time</h2>
-          <div className="w-full h-full min-h-[300px] bg-slate-900 rounded-xl flex items-center justify-center border border-slate-800 overflow-hidden">
-            {resultImage ? (
-              <img src={resultImage} alt="AI Result" className="w-full h-full object-contain" />
+        {/* Kontrol Output Monitor (Kolom Kanan) */}
+        <div className="lg:col-span-5 flex flex-col gap-4 h-full">
+          <div className="flex items-center gap-2 px-1">
+            <Eye className="w-4 h-4 text-emerald-400" />
+            <h2 className="text-xs font-bold text-slate-400 uppercase tracking-widest">Real-time Preview Screen</h2>
+          </div>
+
+          <div className="w-full flex-1 min-h-[400px] glass-panel rounded-2xl border border-slate-800 overflow-hidden flex flex-col items-center justify-center relative bg-slate-950">
+            {outputResult ? (
+              <img src={outputResult} alt="AI Instant Output" className="w-full h-full object-contain" />
             ) : (
-              <p className="text-slate-500 text-sm">Belum ada pemrosesan.</p>
+              <div className="text-center p-8 text-slate-600 max-w-sm flex flex-col items-center">
+                <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center mb-3">
+                  <ShieldAlert className="w-5 h-5 text-slate-700" />
+                </div>
+                <p className="text-xs font-medium">Menunggu instruksi pemrosesan dari modul kontrol...</p>
+              </div>
+            )}
+
+            {isLoading && (
+              <div className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                <div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-xs text-purple-400 font-semibold tracking-wider">Menghubungkan ke Node GPU...</span>
+              </div>
             )}
           </div>
         </div>
       </main>
     </div>
   );
-          }
+}
