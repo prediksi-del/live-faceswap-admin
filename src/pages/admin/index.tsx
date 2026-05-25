@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import Head from 'next/head';
 
-// Impor gabungan modular via barrel export index.ts
+// PERBAIKAN: Arahkan ke nama folder admin saja, bukan ke admin/Sidebar
 import { Sidebar, Header } from '@/components/admin';
 
 import { AnalyticsChart } from '@/components/dashboard/AnalyticsChart';
@@ -97,4 +97,4 @@ export default function AdminDashboard() {
       </div>
     </div>
   );
-                                                                             }
+                    }
