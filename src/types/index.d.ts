@@ -1,3 +1,5 @@
+import React from 'react';
+
 export interface UserSession {
   id: string;
   name: string;
@@ -10,4 +12,9 @@ export interface SwapRequestPayload {
   targetImage: string;
   mode: 'face_swap' | 'body_changer';
   intensity: number;
+}
+
+// Menjamin kustomisasi komponen UI dasar aman dari error type
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
+  variant?: 'primary' | 'secondary' | 'danger';
 }
